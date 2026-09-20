@@ -1,0 +1,19 @@
+language = "typescript"
+
+# No path here: the order appends the exact test file, and a directory named alongside it makes
+# vitest collect that directory too.
+test_command = "npx vitest run --coverage=false"
+
+repo = "honojs/hono"   # this is a fork; its merged pull requests are upstream's
+
+# node, not bun — and the reason is not obvious. A worker needs git (mo-eval reads the agent's
+# change with `git diff`) and no public bun image has it. It does not need bun: vendoring runs
+# here, at packaging time, where there IS a network, and `node_modules` IS the install, so the
+# worker only has to run vitest from the frozen tree with node.
+worker_image = "node:22-bookworm@sha256:dd5847a04b0deee391fa145f1f4c6d214196668b6bcc7988ebed67249f226844"
+
+# Install the package manager, then use it. bun is this repository's manager (`bun.lock`), and
+# `npm install` cannot resolve a bun workspace at all — measured: `Cannot read properties of null
+# (reading 'edgesOut')`. The global install is why the worker image needs no bun of its own.
+offline_prepare = "npm i -g bun && bun install --frozen-lockfile"
+offline_artifacts = ["node_modules"]
