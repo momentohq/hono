@@ -18,10 +18,14 @@ worker_image = "node:22-bookworm@sha256:dd5847a04b0deee391fa145f1f4c6d214196668b
 # with `Cannot find package 'vitest'`, which reads as a repository whose own tests do not pass.
 # It never reaches a worker: the TypeScript contract declares `vendoring_replaces_setup`, so the
 # bundle's manifest omits `setup:` and the frozen `node_modules` is what the worker runs from.
-setup_command = "npm i -g bun && bun install --frozen-lockfile"
+# ONE command, no `&&`: a setup command is `shlex.split` and executed directly, with no shell,
+# while `offline_prepare` below runs through `sh -c`. The two fields do not read the same, and
+# the failure does not say so — npm reports `&" of package "&&": Tags may not have any
+# characters that encodeURIComponent encodes`, which names nothing about shells.
+setup_command = "npx --yes bun install --frozen-lockfile"
 
 # Install the package manager, then use it. bun is this repository's manager (`bun.lock`), and
 # `npm install` cannot resolve a bun workspace at all — measured: `Cannot read properties of null
 # (reading 'edgesOut')`. The global install is why the worker image needs no bun of its own.
-offline_prepare = "npm i -g bun && bun install --frozen-lockfile"
+offline_prepare = "npx --yes bun install --frozen-lockfile"
 offline_artifacts = ["node_modules"]
