@@ -12,6 +12,14 @@ repo = "honojs/hono"   # this is a fork; its merged pull requests are upstream's
 # worker only has to run vitest from the frozen tree with node.
 worker_image = "node:22-bookworm@sha256:dd5847a04b0deee391fa145f1f4c6d214196668b6bcc7988ebed67249f226844"
 
+# Declared even though `node_modules` IS the install, because the two stages happen at different
+# times. Validation runs the repository's tests in the CI job, BEFORE any vendoring — vendoring is a
+# packaging step — so without this the exported workspace has no `node_modules` and every probe fails
+# with `Cannot find package 'vitest'`, which reads as a repository whose own tests do not pass.
+# It never reaches a worker: the TypeScript contract declares `vendoring_replaces_setup`, so the
+# bundle's manifest omits `setup:` and the frozen `node_modules` is what the worker runs from.
+setup_command = "npm i -g bun && bun install --frozen-lockfile"
+
 # Install the package manager, then use it. bun is this repository's manager (`bun.lock`), and
 # `npm install` cannot resolve a bun workspace at all — measured: `Cannot read properties of null
 # (reading 'edgesOut')`. The global install is why the worker image needs no bun of its own.
